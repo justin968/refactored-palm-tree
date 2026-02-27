@@ -6,7 +6,9 @@ const { URL } = require('url');
 
 const PORT = process.env.PORT || 3000;
 const ROOT = process.cwd();
-const DB_PATH = path.join(ROOT, 'data', 'db.json');
+const DEFAULT_DB_PATH = path.join(ROOT, 'data', 'db.json');
+const RUNTIME_DB_PATH = process.env.RUNTIME_DB_PATH || DEFAULT_DB_PATH;
+const FALLBACK_DB_PATH = '/tmp/traceability-db.json';
 const AUDIT_HMAC_SECRET = process.env.AUDIT_HMAC_SECRET || 'dev-only-change-me';
 
 const mime = {
@@ -38,13 +40,33 @@ const defaultDb = () => ({
   counters: { product: 1, sku: 1, lot: 1, hu: 1, order: 1, alloc: 1, tx: 1, audit: 1, doc: 1 }
 });
 
-function loadDb() {
-  if (!fs.existsSync(DB_PATH)) {
-    fs.writeFileSync(DB_PATH, JSON.stringify(defaultDb(), null, 2));
+function resolveDbPath() {
+  if (fs.existsSync(RUNTIME_DB_PATH)) return RUNTIME_DB_PATH;
+  try {
+    fs.mkdirSync(path.dirname(RUNTIME_DB_PATH), { recursive: true });
+    fs.copyFileSync(DEFAULT_DB_PATH, RUNTIME_DB_PATH);
+    return RUNTIME_DB_PATH;
+  } catch (_) {
+    if (!fs.existsSync(FALLBACK_DB_PATH)) {
+      fs.copyFileSync(DEFAULT_DB_PATH, FALLBACK_DB_PATH);
+    }
+    return FALLBACK_DB_PATH;
   }
-  return JSON.parse(fs.readFileSync(DB_PATH, 'utf8'));
 }
-function saveDb(db) { fs.writeFileSync(DB_PATH, JSON.stringify(db, null, 2)); }
+
+function loadDb() {
+  const dbPath = resolveDbPath();
+  if (!fs.existsSync(dbPath)) {
+    fs.writeFileSync(dbPath, JSON.stringify(defaultDb(), null, 2));
+  }
+  return JSON.parse(fs.readFileSync(dbPath, 'utf8'));
+}
+
+function saveDb(db) {
+  const dbPath = resolveDbPath();
+  fs.writeFileSync(dbPath, JSON.stringify(db, null, 2));
+}
+
 function now() { return new Date().toISOString(); }
 
 function stable(obj) {
@@ -526,17 +548,26 @@ async function handleApi(req, res, urlObj) {
   return json(res, 404, { error: 'Unknown API route' });
 }
 
-const server = http.createServer(async (req, res) => {
-  const urlObj = new URL(req.url, `http://${req.headers.host}`);
+async function handleRequest(req, res) {
+  const urlObj = new URL(req.url, `http://${req.headers.host || 'localhost'}`);
   if (urlObj.pathname.startsWith('/api/')) return handleApi(req, res, urlObj);
 
   let file = path.join(ROOT, urlObj.pathname);
   if (urlObj.pathname === '/') file = path.join(ROOT, 'totes', 'receive', 'index.html');
-  if (urlObj.pathname.endsWith('/')) file = path.join(ROOT, urlObj.pathname, 'index.html');
+  else if (urlObj.pathname.endsWith('/')) file = path.join(ROOT, urlObj.pathname, 'index.html');
   if (!path.extname(file) && fs.existsSync(file) && fs.statSync(file).isDirectory()) file = path.join(file, 'index.html');
   if (!fs.existsSync(file) && fs.existsSync(`${file}.html`)) file = `${file}.html`;
   if (!fs.existsSync(file)) return json(res, 404, { error: 'Page not found' });
   sendFile(res, file);
-});
+}
 
-server.listen(PORT, () => console.log(`Server running on http://localhost:${PORT}`));
+if (require.main === module) {
+  const server = http.createServer((req, res) => {
+    handleRequest(req, res).catch((err) => {
+      json(res, 500, { error: err.message || 'Unhandled server error' });
+    });
+  });
+  server.listen(PORT, () => console.log(`Server running on http://localhost:${PORT}`));
+}
+
+module.exports = { handleRequest };
