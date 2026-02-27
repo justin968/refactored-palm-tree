@@ -1,0 +1,14 @@
+<!doctype html><html><head><meta charset='utf-8'><title>Drawdown</title><link rel='stylesheet' href='/public/shared/styles.css'></head><body><div id='nav'></div><main>
+<section class='card'><h2>/drawdown — Drawdown Source → Create Units</h2>
+<form id='f'><div class='grid'>
+<label>Source HU barcode <input name='sourceBarcode' value='TOTE-1001' required></label>
+<label>Output SKU <select name='skuId' id='skuId'></select></label>
+<label>Count <input name='count' type='number' value='10' min='1'></label>
+<label>Output HU Type <select name='outputHuType'><option>BOTTLE</option><option>CASE</option></select></label>
+<label>Output Prefix <input name='outputPrefix' value='QT'></label>
+</div><button>Create Packaged Units</button></form><pre id='out' class='output'></pre></section></main>
+<script src='/public/shared/app.js'></script><script>
+async function init(){document.getElementById('nav').innerHTML=await (await fetch('/public/shared/nav.html')).text();await App.boot();
+document.getElementById('skuId').innerHTML=App.bootstrap.skus.map(s=>`<option value='${s.id}'>${s.label} (${s.skuCode})</option>`).join('');
+document.getElementById('f').onsubmit=async(e)=>{e.preventDefault();const d=Object.fromEntries(new FormData(e.target).entries());const r=await App.api('/api/drawdown',{method:'POST',body:JSON.stringify(d)});App.msg(out,r)}
+}init();</script></body></html>

@@ -1,0 +1,16 @@
+<!doctype html><html><head><meta charset='utf-8'><title>Login</title><link rel='stylesheet' href='/public/shared/styles.css'></head>
+<body><main>
+<section class='card' style='max-width:540px;margin:2rem auto;'>
+  <h2>Login</h2>
+  <p class='small'>Operators should use their assigned account. Only Admin can change products/SKUs/policies.</p>
+  <form id='login-form' class='grid'>
+    <label>User <select id='login-user-select' required></select></label>
+    <button type='submit'>Continue</button>
+  </form>
+</section>
+</main>
+<script src='/public/shared/app.js'></script>
+<script>
+(async()=>{await App.boot();loginForm=document.getElementById('login-form');loginForm.onsubmit=(e)=>{e.preventDefault();App.login(document.getElementById('login-user-select').value);};})();
+</script>
+</body></html>

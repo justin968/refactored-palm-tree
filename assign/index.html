@@ -1,0 +1,10 @@
+<!doctype html><html><head><meta charset='utf-8'><title>Assign</title><link rel='stylesheet' href='/public/shared/styles.css'></head><body><div id='nav'></div><main>
+<section class='card'><h2>/assign — Assign unit to order</h2>
+<form id='f'><div class='grid'>
+<label>Unit barcode <input name='barcode' required placeholder='QT-...'></label>
+<label>External Order # <input name='externalOrderNumber' required value='ORDER-A'></label>
+</div><button>Assign</button></form><pre id='out' class='output'></pre></section></main>
+<script src='/public/shared/app.js'></script><script>
+(async()=>{document.getElementById('nav').innerHTML=await (await fetch('/public/shared/nav.html')).text();await App.boot();
+f.onsubmit=async(e)=>{e.preventDefault();const d=Object.fromEntries(new FormData(f).entries());App.msg(out,await App.api('/api/assign',{method:'POST',body:JSON.stringify(d)}));};})();
+</script></body></html>

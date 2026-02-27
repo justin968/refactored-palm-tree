@@ -1,0 +1,30 @@
+<!doctype html><html><head><meta charset='utf-8'><title>Products</title><link rel='stylesheet' href='/public/shared/styles.css'></head><body><div id='nav'></div><main>
+<section class='card'><h2>/products — Manage Product + SKU</h2>
+<div class='grid'>
+<form id='pform'><h3>New Product</h3>
+<label>Name <input name='name' required></label>
+<label>Quantity Kind <select name='quantityKind'><option>VOLUME</option><option>MASS</option><option>EACH</option></select></label>
+<label>Base UOM <input name='baseUom' value='mL'></label>
+<label>Food grade <select name='isFoodGrade'><option value='false'>false</option><option value='true'>true</option></select></label>
+<label>Requires release <select name='requiresRelease'><option value='false'>false</option><option value='true'>true</option></select></label>
+<button>Create Product</button></form>
+<form id='sform'><h3>New SKU</h3>
+<label>Product <select name='productId' id='skuProduct'></select></label>
+<label>SKU Code <input name='skuCode' required></label>
+<label>Label <input name='label' required></label>
+<label>Qty Base <input name='qtyBase' type='number' step='0.01' required></label>
+<button>Create SKU</button></form>
+</div><pre id='out' class='output'></pre></section>
+<section class='card'><h3>Policy Settings</h3><form id='setForm' class='grid'>
+<label>Policy Bundle <select name='activePolicyBundleId'><option value='tier1'>Tier1</option><option value='tier2'>Tier2</option><option value='tier3'>Tier3</option></select></label>
+<label>allowReshipSealedReturns <select name='allowReshipSealedReturns'><option value='false'>false</option><option value='true'>true</option></select></label>
+<label>requireReasonForExceptions <select name='requireReasonForExceptions'><option value='true'>true</option><option value='false'>false</option></select></label>
+<button>Save Settings</button></form></section>
+</main><script src='/public/shared/app.js'></script><script>
+(async()=>{document.getElementById('nav').innerHTML=await (await fetch('/public/shared/nav.html')).text();await App.boot();
+const refresh=()=>{skuProduct.innerHTML=App.bootstrap.products.map(p=>`<option value='${p.id}'>${p.name}</option>`).join('');};refresh();
+pform.onsubmit=async(e)=>{e.preventDefault();const d=Object.fromEntries(new FormData(pform).entries());d.isFoodGrade=d.isFoodGrade==='true';d.requiresRelease=d.requiresRelease==='true';const r=await App.api('/api/products',{method:'POST',body:JSON.stringify(d)});App.msg(out,r);App.bootstrap.products.push(r);refresh();};
+sform.onsubmit=async(e)=>{e.preventDefault();const d=Object.fromEntries(new FormData(sform).entries());d.qtyBase=Number(d.qtyBase);App.msg(out,await App.api('/api/skus',{method:'POST',body:JSON.stringify(d)}));};
+setForm.onsubmit=async(e)=>{e.preventDefault();const d=Object.fromEntries(new FormData(setForm).entries());d.allowReshipSealedReturns=d.allowReshipSealedReturns==='true';d.requireReasonForExceptions=d.requireReasonForExceptions==='true';App.msg(out,await App.api('/api/settings',{method:'POST',body:JSON.stringify(d)}));};
+})();
+</script></body></html>
