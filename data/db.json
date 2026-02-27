@@ -1,0 +1,174 @@
+{
+  "users": [
+    {
+      "id": "u-admin",
+      "email": "admin@example.com",
+      "name": "Admin",
+      "role": "ADMIN"
+    },
+    {
+      "id": "u-qa",
+      "email": "qa@example.com",
+      "name": "QA",
+      "role": "QA"
+    },
+    {
+      "id": "u-op",
+      "email": "op@example.com",
+      "name": "Operator",
+      "role": "OPERATOR"
+    }
+  ],
+  "products": [
+    {
+      "id": "p_1",
+      "name": "Acetone",
+      "quantityKind": "VOLUME",
+      "baseUom": "mL",
+      "isFoodGrade": false,
+      "requiresRelease": false,
+      "createdAt": "2026-02-27T03:40:20.512Z",
+      "createdBy": "u-admin",
+      "updatedAt": "2026-02-27T03:40:20.512Z",
+      "updatedBy": "u-admin"
+    }
+  ],
+  "skus": [
+    {
+      "id": "sku_1",
+      "productId": "p_1",
+      "skuCode": "AC-PINT",
+      "label": "Pint",
+      "qtyBase": 473.1765,
+      "createdAt": "2026-02-27T03:40:20.512Z",
+      "createdBy": "u-admin",
+      "updatedAt": "2026-02-27T03:40:20.512Z",
+      "updatedBy": "u-admin"
+    },
+    {
+      "id": "sku_2",
+      "productId": "p_1",
+      "skuCode": "AC-QT",
+      "label": "Quart",
+      "qtyBase": 946.353,
+      "createdAt": "2026-02-27T03:40:20.512Z",
+      "createdBy": "u-admin",
+      "updatedAt": "2026-02-27T03:40:20.512Z",
+      "updatedBy": "u-admin"
+    },
+    {
+      "id": "sku_3",
+      "productId": "p_1",
+      "skuCode": "AC-GAL",
+      "label": "Gallon",
+      "qtyBase": 3785.41,
+      "createdAt": "2026-02-27T03:40:20.512Z",
+      "createdBy": "u-admin",
+      "updatedAt": "2026-02-27T03:40:20.512Z",
+      "updatedBy": "u-admin"
+    }
+  ],
+  "lots": [
+    {
+      "id": "lot_1",
+      "productId": "p_1",
+      "supplierName": "Acme",
+      "supplierLot": "L-1",
+      "manufacturerLot": null,
+      "sourceType": "PURCHASED",
+      "status": "PENDING",
+      "receivedAt": "2026-02-27T03:40:20.555Z",
+      "expiryDate": null,
+      "notes": "",
+      "createdAt": "2026-02-27T03:40:20.555Z",
+      "createdBy": "u-op",
+      "updatedAt": "2026-02-27T03:40:20.555Z",
+      "updatedBy": "u-op"
+    }
+  ],
+  "handlingUnits": [
+    {
+      "id": "hu_1",
+      "huType": "TOTE",
+      "barcode": "LOCK-1",
+      "productId": "p_1",
+      "lotId": "lot_1",
+      "parentHuId": null,
+      "integrityState": "SEALED",
+      "status": "PENDING",
+      "qtyOriginalBase": 37854.1,
+      "qtyCurrentBase": 37854.1,
+      "metadata": {},
+      "createdAt": "2026-02-27T03:40:20.555Z",
+      "createdBy": "u-op",
+      "updatedAt": "2026-02-27T03:40:20.555Z",
+      "updatedBy": "u-op"
+    }
+  ],
+  "orders": [],
+  "allocations": [],
+  "documents": [],
+  "settings": {
+    "id": "org",
+    "activePolicyBundleId": "tier3",
+    "allowReshipSealedReturns": false,
+    "allowSmallToBigOnlyViaRepack": true,
+    "requireReasonForExceptions": true,
+    "requireReleaseForFoodGrade": true,
+    "enforceReauthOnSensitiveActions": true
+  },
+  "policyBundles": [
+    {
+      "id": "tier1",
+      "name": "Tier1 Basic",
+      "rules": {}
+    },
+    {
+      "id": "tier2",
+      "name": "Tier2 Controlled",
+      "rules": {}
+    },
+    {
+      "id": "tier3",
+      "name": "Tier3 QA/Compliance",
+      "rules": {}
+    }
+  ],
+  "transactions": [
+    {
+      "id": "tx_1",
+      "seq": 1,
+      "createdAt": "2026-02-27T03:40:20.555Z",
+      "createdBy": "u-op",
+      "type": "RECEIVE_HU",
+      "reasonCode": null,
+      "fromHuId": null,
+      "toHuId": "hu_1",
+      "lotId": "lot_1",
+      "orderId": null,
+      "qtyBase": 37854.1,
+      "metadata": {
+        "barcode": "LOCK-1",
+        "huType": "TOTE"
+      },
+      "supersedesTransactionId": null,
+      "isException": false,
+      "prevHash": null,
+      "payloadHash": "3771ff4687c56dc609ad877d09acc13d06636e44fae6585415eb0081babe0986",
+      "chainHash": "75bfa6536277791bb989b675278e170d6a0488e0c4e0c9acedbf0c47588d9a3c",
+      "signature": "66e450c3d339e9b7ecf63ef2371bc49c3d889b745602612c380f579021152d2d"
+    }
+  ],
+  "auditLogs": [],
+  "counters": {
+    "product": 2,
+    "sku": 4,
+    "lot": 2,
+    "hu": 2,
+    "order": 1,
+    "alloc": 1,
+    "tx": 2,
+    "audit": 1,
+    "doc": 1
+  }
+}

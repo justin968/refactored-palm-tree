@@ -1,0 +1,18 @@
+<!doctype html><html><head><meta charset='utf-8'><title>Returns</title><link rel='stylesheet' href='/public/shared/styles.css'></head><body><div id='nav'></div><main>
+<section class='card'><h2>/returns — Return Receive + Release</h2>
+<form id='rf'><div class='grid'>
+<label>Returned barcode <input name='barcode' required></label>
+<label>Condition <select name='condition'><option>SEALED</option><option>OPENED</option><option>DAMAGED</option></select></label>
+<label>Reason code <input name='reasonCode' required value='CUSTOMER_RETURN'></label>
+</div><button>Receive Return</button></form>
+<form id='relf' class='grid'>
+<label>Return HU barcode/id <input name='barcode' required></label>
+<label>Reason code <input name='reasonCode' value='QA_RELEASE'></label>
+<label>Reauth checkbox <select name='reauth'><option value='false'>false</option><option value='true'>true</option></select></label>
+<button>Release Return</button></form>
+<pre id='out' class='output'></pre></section></main>
+<script src='/public/shared/app.js'></script><script>
+(async()=>{document.getElementById('nav').innerHTML=await (await fetch('/public/shared/nav.html')).text();await App.boot();
+rf.onsubmit=async(e)=>{e.preventDefault();const d=Object.fromEntries(new FormData(rf).entries());App.msg(out,await App.api('/api/returns/receive',{method:'POST',body:JSON.stringify(d)}));};
+relf.onsubmit=async(e)=>{e.preventDefault();const d=Object.fromEntries(new FormData(relf).entries());d.reauth=d.reauth==='true';App.msg(out,await App.api('/api/returns/release',{method:'POST',body:JSON.stringify(d)}));};})();
+</script></body></html>

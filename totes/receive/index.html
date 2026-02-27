@@ -1,0 +1,170 @@
+<!doctype html><html><head><meta charset='utf-8'><title>Receive Inventory</title><link rel='stylesheet' href='/public/shared/styles.css'></head>
+<body><div id='nav'></div><main>
+<section class='card'>
+  <h2>/totes/receive — Receive Inventory</h2>
+  <p class='small'>Operator Fast Receive is default. QA/Admin can open advanced controls.</p>
+
+  <form id='f'>
+    <div class='grid'>
+      <label>Scan/Enter Barcode
+        <input name='barcode' required value='TOTE-1001' autofocus>
+      </label>
+
+      <label>Product (typeahead)
+        <input id='productNameInput' list='productOptions' placeholder='Type product name...' autocomplete='off' required>
+        <datalist id='productOptions'></datalist>
+        <input type='hidden' name='productId' id='productId'>
+      </label>
+
+      <label>Quantity
+        <input name='qty' type='number' step='0.01' value='330' required>
+      </label>
+
+      <label>Unit
+        <div class='row'>
+          <button type='button' id='unitToggle' class='secondary'>gal</button>
+          <select id='uomSelect' name='uom' style='display:none;min-width:120px'></select>
+        </div>
+      </label>
+
+      <label>Supplier Lot (optional)
+        <input name='supplierLot' value='LOT-A1'>
+      </label>
+    </div>
+
+    <details id='advancedDrawer' style='display:none'>
+      <summary>QA/Admin Advanced</summary>
+      <div class='grid' style='margin-top:.6rem'>
+        <label>HU Type override
+          <select name='huType' id='huType'>
+            <option>TOTE</option><option>PALLET</option><option>DRUM</option><option>BAG</option><option>CASE</option>
+          </select>
+        </label>
+
+        <label>Supplier Name
+          <input name='supplierName' value='Acme Supply'>
+        </label>
+
+        <label>Status override
+          <select name='status'>
+            <option>PENDING</option><option>RELEASED</option><option>HOLD</option><option>QUARANTINE</option>
+          </select>
+        </label>
+
+        <label>Expiry Date
+          <input name='expiryDate' type='date'>
+        </label>
+      </div>
+
+      <h3 style='margin:.9rem 0 .5rem'>Attachments (CoA / SDS / photos)</h3>
+      <div class='row'>
+        <select id='docType'>
+          <option>COA</option><option>SDS</option><option>BOL</option><option>PHOTO</option><option>OTHER</option>
+        </select>
+        <input id='docFile' type='file' accept='image/*,.pdf,.txt,.csv,.doc,.docx'>
+        <select id='docEntity'><option value='LOT'>Attach to lot</option><option value='HU'>Attach to handling unit</option></select>
+        <button type='button' id='addDoc' class='secondary'>Add Attachment</button>
+      </div>
+      <div id='docList' class='output small'>No attachments added yet.</div>
+    </details>
+
+    <button style='font-size:1.15rem;padding:.9rem 1.2rem;width:100%;max-width:340px'>Receive</button>
+  </form>
+  <pre id='out' class='output'></pre>
+</section>
+</main>
+<script src='/public/shared/app.js'></script>
+<script>
+const pendingDocs=[];
+let selectedProduct=null;
+
+function defaultHuTypeFor(kind){
+  if(kind==='VOLUME') return 'TOTE';
+  if(kind==='MASS') return 'PALLET';
+  if(kind==='EACH') return 'CASE';
+  return 'TOTE';
+}
+
+function renderDocs(){
+  if(!pendingDocs.length){docList.textContent='No attachments added yet.';return;}
+  docList.textContent=pendingDocs.map((d,i)=>`${i+1}. [${d.docType}] ${d.filename} -> ${d.entityType}`).join('\n');
+}
+
+async function fileToDataUrl(file){
+  return new Promise((resolve,reject)=>{const fr=new FileReader();fr.onload=()=>resolve(fr.result);fr.onerror=reject;fr.readAsDataURL(file);});
+}
+
+function setUnitDefaults(product){
+  const select = document.getElementById('uomSelect');
+  const button = document.getElementById('unitToggle');
+  const allUnits = ['mL','L','gal','qt','g','kg','lb','ea'];
+  const base = product?.baseUom || 'gal';
+  const units = [base, ...allUnits.filter(u => u !== base)];
+  select.innerHTML = units.map(u=>`<option value='${u}'>${u}</option>`).join('');
+  select.value = base;
+  button.textContent = base;
+}
+
+function applyProductDefaults(product){
+  selectedProduct = product;
+  productId.value = product.id;
+  productNameInput.value = product.name;
+  huType.value = defaultHuTypeFor(product.quantityKind);
+  setUnitDefaults(product);
+}
+
+async function init(){
+  document.getElementById('nav').innerHTML=await (await fetch('/public/shared/nav.html')).text();
+  await App.boot();
+
+  if(!App.currentUser){ return; }
+
+  const isPrivileged = ['QA','ADMIN'].includes(App.currentUser.role);
+  advancedDrawer.style.display = isPrivileged ? 'block' : 'none';
+
+  const products = App.bootstrap.products || [];
+  productOptions.innerHTML = products.map(p=>`<option value="${p.name}"></option>`).join('');
+  if(products.length){ applyProductDefaults(products[0]); }
+
+  productNameInput.addEventListener('input', ()=>{
+    const p = products.find(x => x.name.toLowerCase() === productNameInput.value.trim().toLowerCase());
+    if(p) applyProductDefaults(p);
+  });
+
+  productNameInput.addEventListener('blur', ()=>{
+    if(!productId.value && products.length) applyProductDefaults(products[0]);
+  });
+
+  unitToggle.onclick = ()=>{
+    uomSelect.style.display = uomSelect.style.display === 'none' ? 'inline-block' : 'none';
+    if(uomSelect.style.display !== 'none') uomSelect.focus();
+  };
+
+  uomSelect.onchange = ()=>{ unitToggle.textContent = uomSelect.value; };
+
+  addDoc.onclick=async()=>{
+    if(!docFile.files.length)return;
+    const file=docFile.files[0];
+    const url=await fileToDataUrl(file);
+    pendingDocs.push({docType:docType.value, filename:file.name, url, entityType:docEntity.value});
+    docFile.value='';
+    renderDocs();
+  };
+
+  f.onsubmit=async(e)=>{
+    e.preventDefault();
+    if(!productId.value){
+      const p = products.find(x => x.name.toLowerCase() === productNameInput.value.trim().toLowerCase());
+      if(p) productId.value = p.id;
+    }
+    const data=Object.fromEntries(new FormData(f).entries());
+    if(!data.huType && selectedProduct){ data.huType = defaultHuTypeFor(selectedProduct.quantityKind); }
+    data.attachments=pendingDocs;
+    const r=await App.api('/api/receive',{method:'POST',body:JSON.stringify(data)});
+    App.msg(out,r);
+    pendingDocs.length=0;
+    renderDocs();
+  };
+}
+init();
+</script></body></html>
