@@ -1,0 +1,8 @@
+growth.db
+.env
+.env.*
+!.env.example
+__pycache__/
+.pytest_cache/
+*.pyc
+private_data/
