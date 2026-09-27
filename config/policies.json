@@ -1,6 +1,11 @@
 {
   "writes_enabled": false,
   "auto_eligible_enabled": false,
+  "target_google_roas": 6.5,
+  "target_amazon_roas": 10.0,
+  "scale_roas_headroom": 1.15,
+  "waste_term_spend_threshold_usd": 40,
+  "minimum_clicks_for_negative": 8,
   "max_google_budget_change_pct_per_day": 15,
   "max_amazon_budget_change_pct_per_day": 15,
   "max_individual_bid_change_pct": 12,
