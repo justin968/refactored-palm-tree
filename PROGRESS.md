@@ -18,7 +18,7 @@ Updated: 2026-09-27
 - GA4 item-commerce query profile — validated live
 - Amazon Seller order query profile — validated live
 - Amazon Ads campaign/search-term profiles defined
-- Amazon Seller ASIN performance profile defined
+- Amazon Seller ASIN performance profile — validated live
 - Search-term waste detector
 - Campaign scale-candidate detector
 - Opportunity refresh from latest snapshots
@@ -27,8 +27,7 @@ Updated: 2026-09-27
 ## IN PROGRESS
 
 - Validate slow Amazon Ads campaign/search-term queries end-to-end
-- Validate Amazon Seller ASIN sales/traffic query end-to-end
-- CI on live-connectors-v1 branch
+- CI on live-connectors-v1 branch — green
 - Expand opportunity generators beyond waste/scale
 
 ## BLOCKED / INPUT REQUIRED
