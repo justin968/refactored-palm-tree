@@ -78,7 +78,7 @@ def detect_campaign_scale(rows: list[dict], channel: Channel, policy: dict) -> l
         roas = g["sales"] / g["spend"]
         if g["conversions"] < min_conv or roas < target * headroom:
             continue
-        proposed = g["budget"] * 1.10 if g["budget"] > 0 else None
+        proposed = round(g["budget"] * 1.10, 2) if g["budget"] > 0 else None
         action = f"Test a 10% budget increase for {g['name']}" if proposed else f"Review {g['name']} for controlled budget expansion"
         out.append(Opportunity(
             id=str(uuid.uuid4()),
