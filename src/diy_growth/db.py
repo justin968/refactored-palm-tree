@@ -15,6 +15,9 @@ CREATE TABLE IF NOT EXISTS experiments (id TEXT PRIMARY KEY, hypothesis TEXT NOT
 CREATE TABLE IF NOT EXISTS listing_audits (id INTEGER PRIMARY KEY AUTOINCREMENT, sku TEXT NOT NULL, channel TEXT NOT NULL, audit_json TEXT NOT NULL, commercial_priority REAL NOT NULL DEFAULT 0, created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP);
 CREATE TABLE IF NOT EXISTS creative_queue (id INTEGER PRIMARY KEY AUTOINCREMENT, sku TEXT NOT NULL, channel TEXT NOT NULL, asset_type TEXT NOT NULL, trigger TEXT NOT NULL, hypothesis TEXT NOT NULL, source_experiment_id TEXT, priority REAL NOT NULL DEFAULT 0, status TEXT NOT NULL DEFAULT 'QUEUED', filename TEXT, provenance_json TEXT NOT NULL DEFAULT '{}', created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP);
 CREATE TABLE IF NOT EXISTS competitor_products (id INTEGER PRIMARY KEY AUTOINCREMENT, our_sku TEXT NOT NULL, competitor TEXT NOT NULL, competitor_product_ref TEXT NOT NULL, match_quality TEXT NOT NULL, snapshot_json TEXT NOT NULL, observed_at TEXT NOT NULL, UNIQUE(our_sku, competitor, competitor_product_ref, observed_at));
+CREATE TABLE IF NOT EXISTS sync_runs (id INTEGER PRIMARY KEY AUTOINCREMENT, source TEXT NOT NULL, profile TEXT, started_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP, finished_at TEXT, status TEXT NOT NULL DEFAULT 'RUNNING', row_count INTEGER NOT NULL DEFAULT 0, error TEXT);
+CREATE TABLE IF NOT EXISTS raw_snapshots (id INTEGER PRIMARY KEY AUTOINCREMENT, source TEXT NOT NULL, profile TEXT NOT NULL, snapshot_date TEXT NOT NULL, row_json TEXT NOT NULL, ingested_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP);
+CREATE INDEX IF NOT EXISTS idx_raw_snapshots_source_profile_date ON raw_snapshots(source, profile, snapshot_date);
 """
 
 def connect(path: str | Path = "growth.db") -> sqlite3.Connection:
@@ -27,3 +30,11 @@ def save_opportunities(conn: sqlite3.Connection, opportunities: Iterable[Opportu
     for o in opportunities:
         conn.execute("""INSERT OR REPLACE INTO opportunities (id, entity, channel, opportunity_type, observed_problem, evidence_json, inferred_cause, recommended_action, expected_incremental_revenue, expected_incremental_contribution, confidence, implementation_cost, risk, time_to_effect_days, reversibility, action_class, dependencies_json) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)""", (o.id, o.entity, o.channel.value, o.opportunity_type, o.observed_problem, json.dumps(o.evidence), o.inferred_cause, o.recommended_action, o.expected_incremental_revenue, o.expected_incremental_contribution, o.confidence, o.implementation_cost, o.risk, o.time_to_effect_days, o.reversibility, o.action_class.value, json.dumps(o.dependencies)))
     conn.commit()
+
+def save_snapshot_rows(conn: sqlite3.Connection, source: str, profile: str, snapshot_date: str, rows: list[dict]) -> int:
+    conn.executemany(
+        "INSERT INTO raw_snapshots(source, profile, snapshot_date, row_json) VALUES (?,?,?,?)",
+        [(source, profile, snapshot_date, json.dumps(r, sort_keys=True)) for r in rows],
+    )
+    conn.commit()
+    return len(rows)
