@@ -15,6 +15,8 @@ from diy_growth.fba_execution import Journal, OPERATIONS, subset
 from diy_growth.fba_packout import (inbound_plan_payload, packing_payload, shipstation_payload,
                                     tracking_payload, validate_packout)
 from diy_growth.fba_ops import secure_file
+from diy_growth.fba_warehouse import Warehouse
+from fba_v3_helpers import release as release_v3
 
 PID = 'wf1234abcd-1234-abcd-5678-1234abcd5678'
 SID = 'sh1234abcd-1234-abcd-5678-1234abcd5678'
@@ -55,8 +57,9 @@ def scans():
 
 @pytest.fixture
 def journal(tmp_path):
-    j = Journal(str(tmp_path / 'state.sqlite3'))
+    j = Warehouse(str(tmp_path / 'state.sqlite3'))
     j.save('work-1', plan(), NOW)
+    release_v3(j)
     try:
         yield j
     finally:
@@ -66,6 +69,7 @@ def journal(tmp_path):
 def capture_all(j):
     for b in scans():
         j.capture('work-1', b, NOW)
+    j.seal('work-1', 'synthetic packout review', 'test-supervisor', NOW)
 
 
 def proposal(operation='createInboundPlan'):
@@ -536,6 +540,7 @@ def test_duplicate_remote_plan_id_cannot_confirm_two_work_orders(journal):
         g['msku'] = spec.msku
     other = plan_replenishment(spec, snapshot, policy, gates, NOW)
     journal.save('work-2', other, NOW)
+    release_v3(journal, 'work-2')
     p = proposal()
     p['work_key'] = 'work-2'
     p['body'] = inbound_plan_payload(other, SOURCE, 'synthetic-work-2', NOW, **PREP)

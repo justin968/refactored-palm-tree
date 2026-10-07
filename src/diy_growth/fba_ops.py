@@ -14,7 +14,6 @@ import sqlite3
 
 from .fba import Blocked, canonical, digest
 from .fba_api import Amazon, ApiError, HttpTransport, LWAToken, ShipStation
-from .fba_execution import Journal
 
 
 def client_for(scope: str):
@@ -41,7 +40,8 @@ def secure_file(path: Path, *, exclusive: bool = False) -> None:
         flags |= os.O_EXCL
     fd = os.open(path, flags, 0o600)
     try:
-        os.fchmod(fd, 0o600)
+        if hasattr(os, "fchmod"):
+            os.fchmod(fd, 0o600)
     finally:
         os.close(fd)
 
@@ -101,11 +101,12 @@ def main() -> None:
                       'automatic_replenishment_enabled': False}
         else:
             secure_file(args.db)
-            store = Journal(str(args.db))
+            from .fba_warehouse import Warehouse
+            store = Warehouse(str(args.db))
             if args.command == 'status':
                 counts = dict(store.db.execute('SELECT state,COUNT(*) FROM fba_actions GROUP BY state').fetchall())
                 result = {'actions_by_state': counts, 'exceptions': store.exceptions(),
-                          'warehouse_order_release_implemented': False, 'label_purchase_implemented': False}
+                          'warehouse_order_release_implemented': True, 'external_erp_release_implemented': False, 'label_purchase_implemented': False}
             elif args.command == 'show':
                 result = store.action(args.key)
             elif args.command in ('capture', 'link', 'stage'):

@@ -5,8 +5,16 @@ description = "Unified growth control plane for DIYChemicals.com and Amazon"
 requires-python = ">=3.11"
 dependencies = []
 
+[project.optional-dependencies]
+warehouse = ["starlette>=0.50,<1", "uvicorn>=0.38,<1"]
+test = ["pytest>=8,<10", "httpx>=0.28,<1"]
+
 [project.scripts]
 diy = "diy_growth.cli:main"
+diy-fba-station = "diy_growth.fba_station:main"
+
+[tool.setuptools.package-data]
+diy_growth = ["station_assets/*.html", "station_assets/*.js", "station_assets/*.css"]
 
 [tool.pytest.ini_options]
 pythonpath = ["src"]
