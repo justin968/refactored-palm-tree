@@ -1,0 +1,10 @@
+<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>FBA Warehouse Station</title><link rel="stylesheet" href="/assets/style.css"><script src="/assets/app.js" defer></script></head><body>
+<header><div><span class="eyebrow">OPERATIONS / FBA</span><h1>Warehouse station</h1></div><div id="identity"></div></header>
+<main><div id="notice" role="status" aria-live="polite"></div>
+<section id="login" class="card narrow"><h2>Sign in to your station</h2><p>Named accounts keep measurements, corrections and releases attributable.</p><form id="login-form"><label>Username<input name="username" autocomplete="username" required></label><label>Password<input name="password" type="password" autocomplete="current-password" required></label><button>Sign in</button></form></section>
+<div id="workspace" hidden><div class="toolbar"><p id="mode"></p><button id="refresh" class="secondary">Refresh queue</button><button id="logout" class="secondary">Sign out</button></div>
+<div id="metrics" class="metrics"></div>
+<section class="card"><div class="section-head"><h2>Work queue</h2><span>Release → Pack → Review</span></div><div class="scroll"><table><thead><tr><th>Work order / SKU</th><th>State</th><th>Cartons captured</th><th>Owner / due</th><th></th></tr></thead><tbody id="queue"></tbody></table></div></section>
+<div class="columns"><section class="card" id="detail"><h2>Select a work order</h2><p>Approved specifications stay separate from actual carton measurements.</p></section><section class="card" id="resources"><h2>Shared resources</h2><p>Supervisors can inspect reservations here.</p></section></div>
+<p class="footnote">A sealed packout is not carrier acceptance or Amazon receipt. This interface does not purchase labels or submit remote API changes.</p></div>
+</main></body></html>

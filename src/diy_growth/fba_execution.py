@@ -12,6 +12,7 @@ import sqlite3
 
 from .fba import Blocked, PackSpec, canonical, digest, instant, require_gates, text
 from .fba_api import ApiError, api_id
+from .fba_resources import guard_dispatch
 from .fba_packout import (WarehouseStore, inbound_plan_payload, packing_payload,
                           shipstation_payload, tracking_payload)
 
@@ -111,9 +112,9 @@ class Journal(WarehouseStore):
 
     def stage(self, key: str, proposal: dict, now: datetime) -> dict:
         text(key, 'action key')
-        resource = self.validate_proposal(proposal, now)
         self.db.execute('BEGIN IMMEDIATE')
         try:
+            resource = self.validate_proposal(proposal, now)
             prior = self.db.execute('SELECT digest FROM fba_actions WHERE action_key=?', (key,)).fetchone()
             if prior:
                 if prior[0] != digest(proposal):
@@ -195,6 +196,7 @@ class Journal(WarehouseStore):
             if not instant(approval['approved_at']) <= now < instant(approval['valid_until']):
                 raise Blocked('approval expired or is future-dated')
             self.validate_proposal(p, now)
+            guard_dispatch(self.db, p['work_key'], p['operation'], now)
             self.db.execute("UPDATE fba_actions SET state='DISPATCHING' WHERE action_key=?", (key,))
             self._event(key, 'DISPATCHING', {'digest': action['digest']}, now)
             self.db.execute('COMMIT')  # Durable claim BEFORE the network call.
