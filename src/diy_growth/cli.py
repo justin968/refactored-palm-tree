@@ -34,7 +34,10 @@ def cmd_status(args):
     experiments = conn.execute("SELECT COUNT(*) c FROM experiments WHERE status IN ('PLANNED','RUNNING')").fetchone()["c"]
     queued_creative = conn.execute("SELECT COUNT(*) c FROM creative_queue WHERE status='QUEUED'").fetchone()["c"]
     latest_syncs = _rows(conn, "SELECT source, profile, status, row_count, finished_at, error FROM sync_runs ORDER BY id DESC LIMIT 10")
-    print(json.dumps({"open_opportunities":open_ops,"approvals_needed":approvals,"active_experiments":experiments,"creative_queue":queued_creative,"integrations":[x.__dict__ for x in live_health()],"latest_syncs":latest_syncs}, indent=2))
+    evidence = {'canonical_products':conn.execute('SELECT COUNT(*) FROM canonical_products').fetchone()[0],
+                'sourced_cost_values':conn.execute('SELECT COUNT(*) FROM sourced_values').fetchone()[0],
+                'basis':'saved source evidence; live sync readiness separate'}
+    print(json.dumps({"open_opportunities":open_ops,"approvals_needed":approvals,"active_experiments":experiments,"creative_queue":queued_creative,"saved_evidence":evidence,"integrations":[x.__dict__ for x in live_health()],"latest_syncs":latest_syncs}, indent=2))
 
 def cmd_sync_status(args):
     conn = connect(args.db)
@@ -99,9 +102,24 @@ def cmd_scale(args):
 def cmd_init(args):
     connect(args.db).close(); print(f"Initialized {args.db}")
 
+def cmd_evidence(args):
+    from pathlib import Path
+    from .evidence import import_evidence,validate_history
+    conn=connect(args.db)
+    try:
+        fingerprint=import_evidence(conn,json.loads(Path(args.manifest).read_text(encoding='utf-8-sig')))
+        result=validate_history(conn,fingerprint)
+        Path(args.out).write_text(json.dumps(result,indent=2),encoding='utf-8')
+        print(json.dumps({'import_hash':fingerprint,'mappings':result['mappings'],
+                          'costs':result['cost_status_counts'],'holdout_evaluable':result['holdout_replay']['evaluable'],
+                          'mode':'READ_ONLY'}))
+    finally:
+        conn.close()
+
 def main():
     p=argparse.ArgumentParser(prog="diy"); p.add_argument("--db",default="growth.db"); sub=p.add_subparsers(dest="command",required=True)
     g=sub.add_parser("growth"); gs=g.add_subparsers(dest="growth_command",required=True); gs.add_parser("status").set_defaults(func=cmd_status)
+    ev=gs.add_parser('evidence'); ev.add_argument('--manifest',required=True); ev.add_argument('--out',required=True); ev.set_defaults(func=cmd_evidence)
     sy=sub.add_parser("sync"); sys=sy.add_subparsers(dest="sync_command",required=True); sys.add_parser("status").set_defaults(func=cmd_sync_status)
     sr=sys.add_parser("run"); sr.add_argument("source",choices=sorted(list(PROFILES.keys())+["woocommerce"])); sr.add_argument("--profile"); sr.add_argument("--start"); sr.add_argument("--end"); sr.set_defaults(func=cmd_sync_run)
     o=sub.add_parser("opportunities"); o.add_argument("--limit",type=int,default=10); o.add_argument("--refresh",action="store_true"); o.set_defaults(func=cmd_opportunities)

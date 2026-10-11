@@ -6,3 +6,5 @@ __pycache__/
 .pytest_cache/
 *.pyc
 private_data/
+.venv-growth/
+*.egg-info/
